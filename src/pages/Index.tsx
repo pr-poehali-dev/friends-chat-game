@@ -1,159 +1,228 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { CarDashboard } from '@/components/CarDashboard';
+import { CarRadio } from '@/components/CarRadio';
+import { OnlinePlayers } from '@/components/OnlinePlayers';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar } from '@/components/ui/avatar';
 import Icon from '@/components/ui/icon';
 
-const sections = [
-  { id: 'chat', icon: 'MessageCircle', title: 'Чаты', gradient: 'from-primary to-secondary' },
-  { id: 'games', icon: 'Gamepad2', title: 'Игры', gradient: 'from-secondary to-accent' },
-  { id: 'dating', icon: 'Heart', title: 'Знакомства', gradient: 'from-accent to-blue-accent' },
-  { id: 'music', icon: 'Music', title: 'Музыка', gradient: 'from-blue-accent to-primary' },
-  { id: 'karaoke', icon: 'Mic2', title: 'Караоке', gradient: 'from-primary to-orange-accent' },
-  { id: 'video', icon: 'Video', title: 'Видео', gradient: 'from-orange-accent to-secondary' }
-];
-
-const recommendedFriends = [
-  { id: 1, name: 'Алиса', status: 'online', avatar: '👩‍🎤', interests: ['Музыка', 'Игры'] },
-  { id: 2, name: 'Максим', status: 'online', avatar: '🎮', interests: ['Игры', 'Видео'] },
-  { id: 3, name: 'Софья', status: 'away', avatar: '🎨', interests: ['Музыка', 'Караоке'] },
-  { id: 4, name: 'Даниил', status: 'online', avatar: '🎸', interests: ['Караоке', 'Чаты'] }
-];
-
 const Index = () => {
-  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [speed, setSpeed] = useState(0);
+  const [rpm, setRpm] = useState(0);
+  const [fuel, setFuel] = useState(100);
+  const [leftBlinker, setLeftBlinker] = useState(false);
+  const [rightBlinker, setRightBlinker] = useState(false);
+  const [lights, setLights] = useState(false);
+  const [accelerating, setAccelerating] = useState(false);
+  const [braking, setBraking] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSpeed(prev => {
+        let newSpeed = prev;
+        
+        if (accelerating && prev < 240) {
+          newSpeed = Math.min(240, prev + 2);
+          setFuel(f => Math.max(0, f - 0.05));
+        } else if (braking && prev > 0) {
+          newSpeed = Math.max(0, prev - 4);
+        } else if (!accelerating && !braking && prev > 0) {
+          newSpeed = Math.max(0, prev - 0.5);
+        }
+        
+        return newSpeed;
+      });
+
+      setRpm(prev => {
+        if (accelerating && prev < 7000) {
+          return Math.min(7000, prev + 150);
+        } else if (braking || !accelerating) {
+          return Math.max(800, prev - 100);
+        }
+        return prev;
+      });
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, [accelerating, braking]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') {
+        setAccelerating(true);
+      }
+      if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') {
+        setBraking(true);
+      }
+      if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') {
+        setLeftBlinker(true);
+      }
+      if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') {
+        setRightBlinker(true);
+      }
+      if (e.key === 'l' || e.key === 'L') {
+        setLights(prev => !prev);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') {
+        setAccelerating(false);
+      }
+      if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') {
+        setBraking(false);
+      }
+      if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') {
+        setLeftBlinker(false);
+      }
+      if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') {
+        setRightBlinker(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background">
-      <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-black to-gray-900 text-white">
+      <header className="border-b border-gray-800 bg-black/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center animate-pulse-glow">
-              <Icon name="Rocket" className="text-white" size={24} />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00FF88] to-[#00CC70] flex items-center justify-center">
+              <Icon name="Car" className="text-black" size={24} />
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-              ConnectHub
+            <h1 className="text-2xl font-bold text-[#00FF88]" style={{ fontFamily: 'Orbitron' }}>
+              CAR SIMULATOR
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            <Badge variant="outline" className="animate-fade-in">
-              <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-              Онлайн
-            </Badge>
-            <Avatar className="w-10 h-10 border-2 border-primary animate-scale-in cursor-pointer hover:scale-110 transition-transform">
-              <div className="w-full h-full flex items-center justify-center text-2xl">😊</div>
-            </Avatar>
+            <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg border border-gray-700">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-sm" style={{ fontFamily: 'Orbitron' }}>ONLINE</span>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <section className="mb-12 animate-fade-in">
-          <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Что будем делать сегодня?
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sections.map((section, index) => (
-              <Card
-                key={section.id}
-                className={`p-6 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl border-2 animate-scale-in ${
-                  activeSection === section.id ? 'border-primary shadow-xl' : 'border-transparent'
-                }`}
-                style={{ animationDelay: `${index * 0.1}s` }}
-                onClick={() => setActiveSection(section.id)}
-              >
-                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${section.gradient} flex items-center justify-center mb-4 animate-pulse-glow`}>
-                  <Icon name={section.icon as any} className="text-white" size={32} />
-                </div>
-                <h3 className="text-xl font-bold mb-2">{section.title}</h3>
-                <p className="text-muted-foreground text-sm">
-                  {section.id === 'chat' && 'Общайтесь с друзьями в реальном времени'}
-                  {section.id === 'games' && 'Играйте в любимые игры вместе'}
-                  {section.id === 'dating' && 'Находите новых интересных людей'}
-                  {section.id === 'music' && 'Слушайте музыку с друзьями'}
-                  {section.id === 'karaoke' && 'Пойте любимые песни'}
-                  {section.id === 'video' && 'Смотрите видео вместе'}
-                </p>
-              </Card>
-            ))}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-2">
+            <CarDashboard 
+              speed={speed}
+              rpm={rpm}
+              fuel={fuel}
+              leftBlinker={leftBlinker}
+              rightBlinker={rightBlinker}
+              lights={lights}
+            />
           </div>
-        </section>
+          <div>
+            <OnlinePlayers />
+          </div>
+        </div>
 
-        <section className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">
-              Рекомендуем познакомиться
-            </h2>
-            <Icon name="Sparkles" className="text-accent animate-pulse" size={24} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-2">
+            <CarRadio />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {recommendedFriends.map((friend, index) => (
-              <Card
-                key={friend.id}
-                className="p-4 hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer animate-scale-in"
-                style={{ animationDelay: `${0.7 + index * 0.1}s` }}
-              >
-                <div className="flex flex-col items-center text-center">
-                  <div className="relative mb-3">
-                    <Avatar className="w-20 h-20 border-4 border-primary/50 animate-pulse-glow">
-                      <div className="w-full h-full flex items-center justify-center text-4xl">
-                        {friend.avatar}
-                      </div>
-                    </Avatar>
-                    <div className={`absolute bottom-0 right-0 w-5 h-5 rounded-full border-2 border-card ${
-                      friend.status === 'online' ? 'bg-green-500' : 'bg-yellow-500'
-                    } animate-pulse`}></div>
-                  </div>
-                  <h4 className="font-semibold text-lg mb-2">{friend.name}</h4>
-                  <div className="flex flex-wrap gap-1 justify-center">
-                    {friend.interests.map((interest) => (
-                      <Badge key={interest} variant="secondary" className="text-xs">
-                        {interest}
-                      </Badge>
-                    ))}
-                  </div>
-                  <button className="mt-3 w-full py-2 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-medium hover:shadow-lg transition-all">
-                    Добавить
-                  </button>
+          <Card className="bg-gray-900 border-2 border-gray-700 p-6">
+            <h3 className="text-xl font-bold text-[#00FF88] mb-4" style={{ fontFamily: 'Orbitron' }}>
+              УПРАВЛЕНИЕ
+            </h3>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00FF88] to-[#00CC70] flex items-center justify-center font-bold text-black">
+                  W
                 </div>
-              </Card>
-            ))}
-          </div>
-        </section>
+                <span className="text-gray-300">Газ / Ускорение</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#FF6B35] to-[#CC4420] flex items-center justify-center font-bold text-white">
+                  S
+                </div>
+                <span className="text-gray-300">Тормоз</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
+                <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center font-bold">
+                  A
+                </div>
+                <span className="text-gray-300">Левый поворотник</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
+                <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center font-bold">
+                  D
+                </div>
+                <span className="text-gray-300">Правый поворотник</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#FFD23F] to-[#FFA500] flex items-center justify-center font-bold text-black">
+                  L
+                </div>
+                <span className="text-gray-300">Фары</span>
+              </div>
+            </div>
 
-        <section className="mt-12 p-8 rounded-2xl bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 border border-primary/20 animate-fade-in" style={{ animationDelay: '1.1s' }}>
-          <div className="flex items-center gap-4 mb-4">
-            <Icon name="Zap" className="text-accent" size={32} />
-            <h3 className="text-2xl font-bold">Сейчас активно</h3>
+            <div className="mt-6 p-4 bg-gray-800/30 rounded-lg border border-gray-700">
+              <div className="flex items-center gap-2 mb-2">
+                <Icon name="Info" className="text-[#00FF88]" size={20} />
+                <span className="font-semibold text-[#00FF88]" style={{ fontFamily: 'Orbitron' }}>
+                  СОВЕТ
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Следите за уровнем топлива и оборотами двигателя. При превышении 6000 об/мин стрелка станет красной!
+              </p>
+            </div>
+          </Card>
+        </div>
+
+        <div className="relative h-32 bg-gradient-to-b from-gray-800 to-gray-900 rounded-2xl border-2 border-gray-700 overflow-hidden">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div 
+              className="w-1 h-full bg-gradient-to-b from-transparent via-white to-transparent animate-pulse"
+              style={{ 
+                animation: speed > 0 ? `slide ${10 - (speed / 30)}s linear infinite` : 'none',
+                left: '25%'
+              }}
+            ></div>
+            <div 
+              className="w-1 h-full bg-gradient-to-b from-transparent via-white to-transparent animate-pulse"
+              style={{ 
+                animation: speed > 0 ? `slide ${10 - (speed / 30)}s linear infinite` : 'none',
+                left: '50%',
+                animationDelay: '0.5s'
+              }}
+            ></div>
+            <div 
+              className="w-1 h-full bg-gradient-to-b from-transparent via-white to-transparent animate-pulse"
+              style={{ 
+                animation: speed > 0 ? `slide ${10 - (speed / 30)}s linear infinite` : 'none',
+                left: '75%',
+                animationDelay: '1s'
+              }}
+            ></div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div className="p-4 rounded-xl bg-card/50 backdrop-blur">
-              <div className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                1,234
-              </div>
-              <div className="text-sm text-muted-foreground">В чатах</div>
-            </div>
-            <div className="p-4 rounded-xl bg-card/50 backdrop-blur">
-              <div className="text-3xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">
-                567
-              </div>
-              <div className="text-sm text-muted-foreground">В играх</div>
-            </div>
-            <div className="p-4 rounded-xl bg-card/50 backdrop-blur">
-              <div className="text-3xl font-bold bg-gradient-to-r from-accent to-blue-accent bg-clip-text text-transparent">
-                890
-              </div>
-              <div className="text-sm text-muted-foreground">Слушают музыку</div>
-            </div>
-            <div className="p-4 rounded-xl bg-card/50 backdrop-blur">
-              <div className="text-3xl font-bold bg-gradient-to-r from-blue-accent to-primary bg-clip-text text-transparent">
-                345
-              </div>
-              <div className="text-sm text-muted-foreground">Смотрят видео</div>
-            </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-6xl">{speed > 0 ? '🚗' : '🅿️'}</span>
           </div>
-        </section>
+        </div>
       </main>
+
+      <style>{`
+        @keyframes slide {
+          from {
+            transform: translateY(-100%);
+          }
+          to {
+            transform: translateY(100%);
+          }
+        }
+      `}</style>
     </div>
   );
 };
